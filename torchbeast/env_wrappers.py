@@ -31,9 +31,9 @@ def create_env(env_name, flags):
             use_pytorch=True, paint_vel_info=0,
             is_high_res=flags.is_high_res,
             default_zoom=flags.default_zoom,
-            float_obs=True)
+            float_obs=False)  # torchbeast divides by 255
         return CoinRunOneEnv('platform', 1,
-                             default_zoom=flags.default_zoom, float_obs=True)
+                             default_zoom=flags.default_zoom, float_obs=False)
     else:
         return atari_wrappers.wrap_pytorch(
             atari_wrappers.wrap_deepmind(
