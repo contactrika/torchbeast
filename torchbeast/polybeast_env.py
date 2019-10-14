@@ -20,7 +20,7 @@ import time
 
 import numpy as np
 from libtorchbeast import rpcenv
-from torchbeast import atari_wrappers
+from torchbeast.env_wrappers import create_env as create_other_env
 
 
 # yapf: disable
@@ -33,6 +33,21 @@ parser.add_argument('--num_servers', default=4, type=int, metavar='N',
                     help='Number of environment servers.')
 parser.add_argument('--env', type=str, default='PongNoFrameskip-v4',
                     help='Gym environment.')
+# For Coinrun Platforms: setting statics and dynamics to i+num_worlds holds
+# out world i from training. E.g. --set-statics=7 --set-dynamics=7 means
+# only worlds 0,1,3 will be used for RL+SVAE training.
+parser.add_argument('--set_statics', type=int, default=0,
+                    help='Statics for CoinRun world [0-3]')
+parser.add_argument('--set_dynamics', type=int, default=0,
+                    help='Dynamics for CoinRun world [0-3]')
+parser.add_argument('--num_levels', type=int, default=500,
+                    help='Number of levels per platforms world')
+parser.add_argument('--any_custom_game', type=int, default=1,
+                    help='Select any of the 4 custom games.')
+parser.add_argument('--is_high_res', type=int, default=0,
+                    help='Whether to render in high resolution.')
+parser.add_argument('--default_zoom', type=int, default=5,
+                    help='Default zoom for game visualization.')
 # yapf: enable
 
 
@@ -46,20 +61,13 @@ class Env:
         return frame, 0.0, False, {}  # First three mandatory.
 
 
-def create_env(env_name, lock=threading.Lock()):
-    with lock:  # Atari isn't threadsafe at construction time.
-        return atari_wrappers.wrap_pytorch(
-            atari_wrappers.wrap_deepmind(
-                atari_wrappers.make_atari(env_name),
-                clip_rewards=False,
-                frame_stack=True,
-                scale=False,
-            )
-        )
+def create_env(env_name, flags, lock=threading.Lock()):
+    with lock:  # envs might not be threadsafe at construction time.
+        return create_other_env(env_name, flags)
 
 
-def serve(env_name, server_address):
-    init = Env if env_name == "Mock" else lambda: create_env(env_name)
+def serve(env_name, server_address, flags):
+    init = Env if env_name == "Mock" else lambda: create_env(env_name, flags)
     server = rpcenv.Server(init, server_address=server_address)
     server.run()
 
@@ -73,7 +81,7 @@ if __name__ == "__main__":
     processes = []
     for i in range(flags.num_servers):
         p = mp.Process(
-            target=serve, args=(flags.env, f"{flags.pipes_basename}.{i}"), daemon=True
+            target=serve, args=(flags.env, f"{flags.pipes_basename}.{i}", flags), daemon=True
         )
         p.start()
         processes.append(p)
