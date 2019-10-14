@@ -525,7 +525,7 @@ def test(flags, num_episodes: int = 10):
 
     while len(returns) < num_episodes:
         if flags.mode == "test_render":
-            env.gym_env.render()
+            env.gym_env.render(); time.sleep(0.1)
         agent_outputs = model(observation)
         policy_outputs, _ = agent_outputs
         observation = env.step(policy_outputs["action"])
