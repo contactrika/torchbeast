@@ -498,19 +498,19 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
             sps = (step - start_step) / (timer() - start_time)
             if accum_stats.get("episode_returns", None):
                 mean_return = (
-                    "Return per episode: %.1f. " % accum_stats["mean_episode_return"]
+                    "Return per episode: %.1f." % accum_stats["mean_episode_return"]
                 )
             else:
                 mean_return = ""
             total_loss = stats.get("total_loss", float("inf"))
             logging.info(
-                "Steps %i @ %.1f SPS. Loss %f. %sStats:\n%s",
+                "Steps %i @ %.1f SPS. Loss %f. %s Accum stats:%s\nStats:\n%s",
                 step,
                 sps,
                 total_loss,
                 mean_return,
-                pprint.pformat(stats),
                 pprint.pformat(accum_stats),
+                pprint.pformat(stats),
             )
     except KeyboardInterrupt:
         return  # Try joining actors then quit.
