@@ -52,6 +52,8 @@ parser.add_argument("--disable_checkpoint", action="store_true",
                     help="Disable saving checkpoint.")
 parser.add_argument("--savedir", default="~/logs/torchbeast",
                     help="Root dir where experiment data will be saved.")
+parser.add_argument("--loaddir", default=None,
+                    help="Dir from which to load model to continue training.")
 parser.add_argument("--num_actors", default=4, type=int, metavar="N",
                     help="Number of actors (default: 4).")
 parser.add_argument("--total_steps", default=100000, type=int, metavar="T",
@@ -347,6 +349,12 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
     env = create_env(flags)
 
     model = Net(env.observation_space.shape, env.action_space.n, flags.use_lstm)
+
+    if flags.loaddir is not None:
+        loadpath = os.path.join(os.path.expanduser(flags.loaddir), 'model.tar')
+        logging.info("Continue training from", loadpath)
+        checkpoint = torch.load(loadpath, map_location=flags.device)
+        model.load_state_dict(checkpoint["model_state_dict"])
     buffers = create_buffers(flags, env.observation_space.shape, model.num_actions)
 
     model.share_memory()
@@ -467,7 +475,7 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
         while step < flags.total_steps:
             start_step = step
             start_time = timer()
-            time.sleep(5)
+            time.sleep(10.0)  # print every 10 sec
 
             if timer() - last_checkpoint_time > 10 * 60:  # Save every 10 min.
                 checkpoint()
