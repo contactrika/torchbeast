@@ -13,11 +13,8 @@ class CoinRunOneEnv(coinrunenv.CoinRunVecEnv):
         print('CoinRun ignores seed()')
 
     def step(self, actions):
-        print('in step')
         self.step_async(actions)
-        print('after step_async')
         res = self.step_wait()
-        print('after step_wait')
         return res
 
 
