@@ -484,7 +484,7 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
         while step < flags.total_steps:
             start_step = step
             start_time = timer()
-            time.sleep(1.0)
+            time.sleep(0.5)
             if stats.get("episode_returns", None):
                 episode_returns.extend(stats["episode_returns"])
             if timer() - last_print_time < 10.0: continue  # wait 10s to print
