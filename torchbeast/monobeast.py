@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import argparse
+from copy import copy
 import logging
 import os
 import pprint
@@ -280,7 +281,7 @@ def learn(
 
         episode_returns = batch["episode_return"][batch["done"]]
         stats = {
-            "episode_returns": tuple(episode_returns.cpu().numpy()),
+            "episode_returns": list(episode_returns.cpu().numpy()),
             "mean_episode_return": torch.mean(episode_returns).item(),
             "total_loss": total_loss.item(),
             "pg_loss": pg_loss.item(),
@@ -478,20 +479,26 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
 
     timer = timeit.default_timer
     try:
-        last_checkpoint_time = timer()
+        last_checkpoint_time = timer(); last_print_time = timer()
+        accum_stats = {}
         while step < flags.total_steps:
             start_step = step
             start_time = timer()
-            time.sleep(10.0)  # print every 10 sec
+            time.sleep(1.0)
+            if stats.get("episode_returns", None):
+                accum_stats["episode_returns"].extend(stats["episode_returns"])
+                accum_stats["mean_episode_return"] = sum(
+                    accum_stats["episode_returns"])/len(accum_stats["episode_returns"])
+            if timer() - last_print_time < 10.0: continue  # wait 10s to print
 
             if timer() - last_checkpoint_time > 10 * 60:  # Save every 10 min.
                 checkpoint()
                 last_checkpoint_time = timer()
 
             sps = (step - start_step) / (timer() - start_time)
-            if stats.get("episode_returns", None):
+            if accum_stats.get("episode_returns", None):
                 mean_return = (
-                    "Return per episode: %.1f. " % stats["mean_episode_return"]
+                    "Return per episode: %.1f. " % accum_stats["mean_episode_return"]
                 )
             else:
                 mean_return = ""
@@ -503,6 +510,7 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
                 total_loss,
                 mean_return,
                 pprint.pformat(stats),
+                pprint.pformat(accum_stats),
             )
     except KeyboardInterrupt:
         return  # Try joining actors then quit.
