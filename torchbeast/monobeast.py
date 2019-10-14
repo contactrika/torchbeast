@@ -521,13 +521,13 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
             if len(episode_returns) > 0:
                 mean_return_val = sum(episode_returns)/len(episode_returns)
                 mean_return = (
-                    "Return per episode: %.1f." % mean_return_val
+                    "Return per episode: %.1f" % mean_return_val
                 )
             else:
                 mean_return = ""
             total_loss = stats.get("total_loss", float("inf"))
             logging.info(
-                "Steps %i @ %.1f SPS. Loss %f. %s\nEpsd returns:%s\nStats:\n%s",
+                "Steps %i @ %.1f SPS Loss %f %s\nEpsd returns:%s\nStats:\n%s",
                 step,
                 sps,
                 total_loss,
