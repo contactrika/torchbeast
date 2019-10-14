@@ -4,6 +4,21 @@
 # Wrappers for custom envs.
 #
 from torchbeast import atari_wrappers
+from coinrun import coinrunenv
+
+
+class CoinRunOneEnv(coinrunenv.CoinRunVecEnv):
+
+    def seed(self, seed):
+        print('CoinRun ignores seed()')
+
+    def step(self, actions):
+        print('in step')
+        self.step_async(actions)
+        print('after step_async')
+        res = self.step_wait()
+        print('after step_wait')
+        return res
 
 
 def create_env(env_name, flags):
@@ -20,10 +35,8 @@ def create_env(env_name, flags):
             is_high_res=flags.is_high_res,
             default_zoom=flags.default_zoom,
             float_obs=True)
-        env = coinrunenv.make('platform',  # 'standard', 'platform', 'maze'
-                              1, default_zoom=flags.default_zoom,
-                              float_obs=True)
-        return env
+        return CoinRunOneEnv('platform', 1,
+                             default_zoom=flags.default_zoom, float_obs=True)
     else:
         return atari_wrappers.wrap_pytorch(
             atari_wrappers.wrap_deepmind(
