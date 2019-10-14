@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import argparse
+from copy import copy
 import logging
 import os
 import pprint
@@ -371,11 +372,14 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
         load_checkpoint = torch.load(loadpath, map_location=flags.device)
 
     env = create_env(flags.env, flags)
+    obs_shape = copy(env.observation_space.shape)
+    act_shape = env.action_space.n
+    del env
 
-    model = Net(env.observation_space.shape, env.action_space.n, flags.use_lstm)
+    model = Net(obs_shape, act_shape, flags.use_lstm)
     if load_checkpoint is not None:
         model.load_state_dict(load_checkpoint["model_state_dict"])
-    buffers = create_buffers(flags, env.observation_space.shape, model.num_actions)
+    buffers = create_buffers(flags, obs_shape, model.num_actions)
     model.share_memory()
 
     # Add initial RNN state.
@@ -407,9 +411,8 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
         actor.start()
         actor_processes.append(actor)
 
-    learner_model = Net(
-        env.observation_space.shape, env.action_space.n, flags.use_lstm
-    ).to(device=flags.device)
+    learner_model = Net(obs_shape, act_shape, flags.use_lstm).to(
+        device=flags.device)
     if load_checkpoint is not None:
         learner_model.load_state_dict(load_checkpoint["model_state_dict"])
 
