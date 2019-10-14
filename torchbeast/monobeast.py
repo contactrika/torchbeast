@@ -346,17 +346,18 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
         logging.info("Not using CUDA.")
         flags.device = torch.device("cpu")
 
-    env = create_env(flags)
-
-    model = Net(env.observation_space.shape, env.action_space.n, flags.use_lstm)
-
+    load_checkpoint = None
     if flags.loaddir is not None:
         loadpath = os.path.join(os.path.expanduser(flags.loaddir), 'model.tar')
         logging.info("Continue training from {}".format(loadpath))
-        checkpoint = torch.load(loadpath, map_location=flags.device)
-        model.load_state_dict(checkpoint["model_state_dict"])
-    buffers = create_buffers(flags, env.observation_space.shape, model.num_actions)
+        load_checkpoint = torch.load(loadpath, map_location=flags.device)
 
+    env = create_env(flags)
+
+    model = Net(env.observation_space.shape, env.action_space.n, flags.use_lstm)
+    if load_checkpoint is not None:
+        model.load_state_dict(load_checkpoint["model_state_dict"])
+    buffers = create_buffers(flags, env.observation_space.shape, model.num_actions)
     model.share_memory()
 
     # Add initial RNN state.
@@ -391,6 +392,8 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
     learner_model = Net(
         env.observation_space.shape, env.action_space.n, flags.use_lstm
     ).to(device=flags.device)
+    if load_checkpoint is not None:
+        learner_model.load_state_dict(load_checkpoint["model_state_dict"])
 
     optimizer = torch.optim.RMSprop(
         learner_model.parameters(),
@@ -399,11 +402,15 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
         eps=flags.epsilon,
         alpha=flags.alpha,
     )
+    if load_checkpoint is not None:
+        optimizer.load_state_dict(load_checkpoint["optimizer_state_dict"])
 
     def lr_lambda(epoch):
         return 1 - min(epoch * T * B, flags.total_steps) / flags.total_steps
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+    if load_checkpoint is not None:
+        scheduler.load_state_dict(load_checkpoint["scheduler_state_dict"])
 
     logger = logging.getLogger("logfile")
     stat_keys = [
