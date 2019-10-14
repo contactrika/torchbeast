@@ -479,14 +479,14 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
 
     timer = timeit.default_timer
     try:
-        last_checkpoint_time = timer(); last_print_time = timer()
-        accum_stats = {"episode_returns": []}
+        last_checkpoint_time = timer()
+        last_print_time = timer(); episode_returns = []
         while step < flags.total_steps:
             start_step = step
             start_time = timer()
             time.sleep(1.0)
             if stats.get("episode_returns", None):
-                accum_stats["episode_returns"].extend(stats["episode_returns"])
+                episode_returns.extend(stats["episode_returns"])
             if timer() - last_print_time < 10.0: continue  # wait 10s to print
 
             if timer() - last_checkpoint_time > 10 * 60:  # Save every 10 min.
@@ -494,9 +494,8 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
                 last_checkpoint_time = timer()
 
             sps = (step - start_step) / (timer() - start_time)
-            if accum_stats.get("episode_returns", None):
-                mean_return_val = (sum(accum_stats["episode_returns"])/
-                                   len(accum_stats["episode_returns"]))
+            if len(episode_returns) > 0:
+                mean_return_val = sum(episode_returns)/len(episode_returns)
                 mean_return = (
                     "Return per episode: %.1f." % mean_return_val
                 )
@@ -504,14 +503,15 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
                 mean_return = ""
             total_loss = stats.get("total_loss", float("inf"))
             logging.info(
-                "Steps %i @ %.1f SPS. Loss %f. %s Accum stats:%s\nStats:\n%s",
+                "Steps %i @ %.1f SPS. Loss %f. %s\nEpsd returns:%s\nStats:\n%s",
                 step,
                 sps,
                 total_loss,
                 mean_return,
-                pprint.pformat(accum_stats),
+                pprint.pformat(episode_returns),
                 pprint.pformat(stats),
             )
+            last_print_time = timer(); episode_returns = []
     except KeyboardInterrupt:
         return  # Try joining actors then quit.
     else:
