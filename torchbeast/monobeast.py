@@ -480,15 +480,13 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
     timer = timeit.default_timer
     try:
         last_checkpoint_time = timer(); last_print_time = timer()
-        accum_stats = {}
+        accum_stats = {"episode_returns": []}
         while step < flags.total_steps:
             start_step = step
             start_time = timer()
             time.sleep(1.0)
             if stats.get("episode_returns", None):
                 accum_stats["episode_returns"].extend(stats["episode_returns"])
-                accum_stats["mean_episode_return"] = sum(
-                    accum_stats["episode_returns"])/len(accum_stats["episode_returns"])
             if timer() - last_print_time < 10.0: continue  # wait 10s to print
 
             if timer() - last_checkpoint_time > 10 * 60:  # Save every 10 min.
@@ -497,8 +495,10 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
 
             sps = (step - start_step) / (timer() - start_time)
             if accum_stats.get("episode_returns", None):
+                mean_return_val = (sum(accum_stats["episode_returns"])/
+                                   len(accum_stats["episode_returns"]))
                 mean_return = (
-                    "Return per episode: %.1f." % accum_stats["mean_episode_return"]
+                    "Return per episode: %.1f." % mean_return_val
                 )
             else:
                 mean_return = ""
