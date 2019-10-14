@@ -25,6 +25,7 @@ class Net(nn.Module):
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
 
         # Fully connected layer.
+        assert(observation_shape[0] == 3)  # expect RGB
         if observation_shape[-1] == 84:  # atari
             conv_out_features = 3136
         elif observation_shape[-1] == 64:  # coinrun

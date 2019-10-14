@@ -372,8 +372,6 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
 
     env = create_env(flags.env, flags)
 
-    print('!!!!!! env.observation_space.shape', env.observation_space.shape)
-
     model = Net(env.observation_space.shape, env.action_space.n, flags.use_lstm)
     if load_checkpoint is not None:
         model.load_state_dict(load_checkpoint["model_state_dict"])
