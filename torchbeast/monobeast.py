@@ -371,10 +371,14 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
         logging.info("Continue training from {}".format(loadpath))
         load_checkpoint = torch.load(loadpath, map_location=flags.device)
 
-    #env = create_env(flags.env, flags)
-    obs_shape = (3, 64, 64)  #copy(env.observation_space.shape)
-    act_shape = 7 #env.action_space.n
-    #del env
+    if flags.env.startswith('Coin'):
+        obs_shape = (3, 64, 64)  # will deadlock if we try to create env here
+        act_shape = 7            # so specify space shapes manually
+    else:
+        env = create_env(flags.env, flags)
+        obs_shape = copy(env.observation_space.shape)
+        act_shape = env.action_space.n
+        del env
 
     model = Net(obs_shape, act_shape, flags.use_lstm)
     if load_checkpoint is not None:
