@@ -352,7 +352,7 @@ def train(flags):  # pylint: disable=too-many-branches, too-many-statements
 
     if flags.loaddir is not None:
         loadpath = os.path.join(os.path.expanduser(flags.loaddir), 'model.tar')
-        logging.info("Continue training from", loadpath)
+        logging.info("Continue training from {}".format(loadpath))
         checkpoint = torch.load(loadpath, map_location=flags.device)
         model.load_state_dict(checkpoint["model_state_dict"])
     buffers = create_buffers(flags, env.observation_space.shape, model.num_actions)
