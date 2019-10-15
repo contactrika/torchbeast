@@ -41,7 +41,7 @@ from torchbeast.core import vtrace
 # yapf: disable
 parser = argparse.ArgumentParser(description="PyTorch Scalable Agent")
 
-parser.add_argument("--env", type=str, default="PongNoFrameskip-v4",
+parser.add_argument("--env", type=str, default="CoinRunPlt",
                     help="Gym environment.")
 parser.add_argument("--mode", default="train",
                     choices=["train", "test", "test_render"],
